@@ -1,0 +1,57 @@
+title: Process Opened With Injection Rights From .NET JIT Code
+id: f2466723-0063-4105-bc36-93f1bd4dfe3d
+related:
+    - id: e0b03a90-9e6d-46d3-8a48-d14108f879dd
+      type: similar
+status: experimental
+description: |
+    Hunting companion to "Process Opened With Injection Rights From Unbacked Code". Detects the same pattern, an
+    injection-capable process handle requested from code outside any loaded module, when the caller is JIT-compiled
+    .NET code: the source is PowerShell or the IIS worker process, or the call stack runs through the .NET runtime.
+    Scripts and web applications produce these events every time they start a child process, so expect noise and
+    review the target and the surrounding activity. Unmanaged PowerShell injection, PowerShell-based process migration
+    and webshell payloads surface here.
+references:
+    - https://github.com/skyquaz/procsweep
+    - https://attack.mitre.org/techniques/T1055/
+author: skyquaz
+date: 2026-11-11
+tags:
+    - attack.stealth
+    - attack.privilege-escalation
+    - attack.t1055
+    - detection.threat-hunting
+logsource:
+    product: windows
+    category: process_access
+detection:
+    selection_trace:
+        CallTrace|contains: 'UNKNOWN('
+    selection_rights:
+        GrantedAccess:
+            - '0x1fffff'
+            - '0x1f0fff'
+            - '0x1f1fff'
+            - '0x1f3fff'
+            - '0x1fff'
+            - '0x143a'
+            - '0x147a'
+            - '0x1438'
+            - '0x43a'
+            - '0x47a'
+            - '0x438'
+    selection_host_image:
+        SourceImage|endswith:
+            - '\powershell.exe'
+            - '\powershell_ise.exe'
+            - '\pwsh.exe'
+            - '\w3wp.exe'
+    selection_host_clr_frames:
+        CallTrace|contains:
+            - '\mscorwks.dll+'
+            - '\clr.dll+'
+            - '\coreclr.dll+'
+    condition: selection_trace and selection_rights and 1 of selection_host_*
+falsepositives:
+    - PowerShell scripts and .NET applications that start child processes
+level: low

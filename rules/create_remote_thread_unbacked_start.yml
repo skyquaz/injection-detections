@@ -1,0 +1,30 @@
+title: Remote Thread Started Outside Any Loaded Module
+id: a7d0c952-4195-459e-b3b6-910250d1ea24
+status: experimental
+description: |
+    Detects a thread created in another process whose start address does not belong to any loaded module, which Sysmon
+    records as an empty StartModule. Injected shellcode and reflectively loaded payloads run from memory that has no image
+    file behind it, so a remote thread pointed at them has no start module, while legitimate remote threads (console
+    control handlers, debugger break-ins) start inside system DLLs.
+    This is the event-log counterpart of procsweep's UNBACKED_THREAD finding.
+references:
+    - https://github.com/skyquaz/procsweep
+    - https://attack.mitre.org/techniques/T1055/
+author: skyquaz
+date: 2026-11-11
+tags:
+    - attack.stealth
+    - attack.privilege-escalation
+    - attack.t1055
+logsource:
+    product: windows
+    category: create_remote_thread
+detection:
+    selection_empty:
+        StartModule: ''
+    selection_missing:
+        StartModule: null
+    condition: 1 of selection_*
+falsepositives:
+    - Security products and debuggers that place their own code in other processes
+level: high

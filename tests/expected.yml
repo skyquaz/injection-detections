@@ -1,0 +1,50 @@
+# Reviewed baseline: the EVTX-ATTACK-SAMPLES files each rule must fire on, and no others.
+# Every listed sample was checked by hand; tests/evaluate.py fails on any missing or extra match.
+
+# Remote Thread Started Outside Any Loaded Module (high)
+a7d0c952-4195-459e-b3b6-910250d1ea24:
+  samples:
+    - AutomatedTestingTools/Malware/sideloading_uacbypass_rundll32_injection_c2.evtx  # WINWORD injecting into explorer
+    - Credential Access/CA_keepass_KeeThief_Get-KeePassDatabaseKey.evtx                 # KeeThief shellcode in KeePass
+    - Credential Access/CA_sysmon_hashdump_cmd_meterpreter.evtx                         # Meterpreter migrating into lsass
+    - Defense Evasion/apt10_jjs_sideloading_prochollowing_persist_as_service_sysmon_1_7_8_13.evtx  # hollowed svchost
+    - Defense Evasion/de_unmanagedpowershell_psinject_sysmon_7_8_10.evtx                # PSInject into notepad
+    - Defense Evasion/meterpreter_migrate_to_explorer_sysmon_8.evtx                     # Meterpreter migrate
+    - Execution/Sysmon_meterpreter_ReflectivePEInjection_to_notepad_.evtx               # Invoke-ReflectivePEInjection
+    - Privilege Escalation/privesc_rotten_potato_from_webshell_metasploit_sysmon_1_8_3.evtx  # payload injected into notepad
+
+# PowerShell Engine Loaded Into An Unusual Process (medium)
+f940f7ed-456c-4d8b-8ccb-6911bf42dc36:
+  samples:
+    - Defense Evasion/de_unmanagedpowershell_psinject_sysmon_7_8_10.evtx                # S.M.A.ni.dll loaded by notepad
+
+# Process Opened With Injection Rights From Unbacked Code (high)
+e0b03a90-9e6d-46d3-8a48-d14108f879dd:
+  samples:
+    - AutomatedTestingTools/Malware/DE_timestomp_and_dll_sideloading_and_RunPersist.evtx  # sideloaded payload in NvSmart
+    - AutomatedTestingTools/Malware/rundll32_hollowing_wermgr_masquerading.evtx         # rundll32 hollowing wermgr
+    - Credential Access/CA_sysmon_hashdump_cmd_meterpreter.evtx                         # Meterpreter opening lsass & co
+    - Defense Evasion/Sysmon_10_Evasion_Suspicious_NtOpenProcess_CallTrace.evtx         # direct NtOpenProcess from shellcode
+    - Defense Evasion/evasion_codeinj_odzhan_conhost_sysmon_10_1.evtx                   # conhost injection (odzhan)
+    - Defense Evasion/evasion_codeinj_odzhan_spoolsv_sysmon_10_1.evtx                   # spoolsv injection (odzhan)
+    - Execution/Sysmon_meterpreter_ReflectivePEInjection_to_notepad_.evtx               # injected notepad opening rundll32
+    - Execution/exec_driveby_cve-2018-15982_sysmon_1_10.evtx                            # exploit shellcode in iexplore
+    - Privilege Escalation/Sysmon_UACME_22.evtx                                         # UACME method 22
+    - Privilege Escalation/Sysmon_UACME_63.evtx                                         # UACME method 63
+    - Privilege Escalation/sysmon_1_7_elevate_uacbypass_sysprep.evtx                    # code in explorer driving sysprep
+
+# Process Opened With Injection Rights From .NET JIT Code (low, hunting)
+f2466723-0063-4105-bc36-93f1bd4dfe3d:
+  samples:
+    - Defense Evasion/de_unmanagedpowershell_psinject_sysmon_7_8_10.evtx
+    - Defense Evasion/sysmon_10_1_ppid_spoofing.evtx
+    - Execution/Sysmon_meterpreter_ReflectivePEInjection_to_notepad_.evtx
+    - Lateral Movement/LM_sysmon_psexec_smb_meterpreter.evtx
+    - Lateral Movement/LM_typical_IIS_webshell_sysmon_1_10_traces.evtx
+    - Lateral Movement/lm_sysmon_18_remshell_over_namedpipe.evtx
+    - Lateral Movement/powercat_revShell_sysmon_1_3.evtx
+    - Privilege Escalation/CVE-2020-0796_SMBV3Ghost_LocalPrivEsc_Sysmon_3_1_10.evtx
+    - Privilege Escalation/Sysmon_13_1_UACBypass_SDCLTBypass.evtx
+    - Privilege Escalation/Sysmon_13_1_UAC_Bypass_EventVwrBypass.evtx
+    - Privilege Escalation/privesc_rotten_potato_from_webshell_metasploit_sysmon_1_8_3.evtx
+    - Privilege Escalation/sysmon_1_7_elevate_uacbypass_sysprep.evtx

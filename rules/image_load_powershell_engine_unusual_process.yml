@@ -1,0 +1,38 @@
+title: PowerShell Engine Loaded Into An Unusual Process
+id: f940f7ed-456c-4d8b-8ccb-6911bf42dc36
+status: experimental
+description: |
+    Detects System.Management.Automation.dll, the PowerShell engine, being loaded by a process that is not a known
+    PowerShell host. Unmanaged PowerShell tooling such as PSInject loads the CLR and the PowerShell engine into an
+    unrelated process (for example notepad.exe) to run scripts without powershell.exe ever starting.
+references:
+    - https://github.com/EmpireProject/PSInject
+    - https://attack.mitre.org/techniques/T1055/
+    - https://attack.mitre.org/techniques/T1059/001/
+author: skyquaz
+date: 2026-11-11
+tags:
+    - attack.execution
+    - attack.stealth
+    - attack.t1059.001
+    - attack.t1055
+logsource:
+    product: windows
+    category: image_load
+detection:
+    selection:
+        ImageLoaded|endswith:
+            - '\System.Management.Automation.dll'
+            - '\System.Management.Automation.ni.dll'
+    filter_main_powershell_hosts:
+        Image|endswith:
+            - '\powershell.exe'
+            - '\powershell_ise.exe'
+            - '\pwsh.exe'
+            - '\wsmprovhost.exe'   # PowerShell remoting
+            - '\sdiagnhost.exe'    # Windows troubleshooting packs
+            - '\ServerManager.exe'
+    condition: selection and not 1 of filter_main_*
+falsepositives:
+    - Management tools, IDEs and agents that host PowerShell in-process (MMC snap-ins, Visual Studio, configuration management)
+level: medium

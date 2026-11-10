@@ -1,0 +1,51 @@
+name: rules
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CHAINSAW_VERSION: v2.17.1
+  # sbousseaden/EVTX-ATTACK-SAMPLES, pinned so results are reproducible
+  SAMPLES_COMMIT: 4ceed2f4706daf601c212a8f91c113dd85349a2c
+
+jobs:
+  validate-and-evaluate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Install sigma-cli
+        run: pip install sigma-cli==4.0.0 pyyaml
+
+      - name: Validate rules (syntax and SigmaHQ conventions)
+        run: sigma check --fail-on-error --fail-on-issues rules
+
+      - name: Fetch Chainsaw
+        run: |
+          curl -sSfL -o chainsaw.tar.gz "https://github.com/WithSecureLabs/chainsaw/releases/download/${CHAINSAW_VERSION}/chainsaw_x86_64-unknown-linux-gnu.tar.gz"
+          mkdir chainsaw && tar -xzf chainsaw.tar.gz -C chainsaw
+          curl -sSfL -o sigma-event-logs-all.yml "https://raw.githubusercontent.com/WithSecureLabs/chainsaw/${CHAINSAW_VERSION}/mappings/sigma-event-logs-all.yml"
+          echo "CHAINSAW=$(find chainsaw -type f -name chainsaw | head -n 1)" >> "$GITHUB_ENV"
+
+      - name: Fetch EVTX-ATTACK-SAMPLES
+        run: |
+          git init -q samples
+          git -C samples fetch -q --depth 1 https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES.git "$SAMPLES_COMMIT"
+          git -C samples checkout -q FETCH_HEAD
+
+      - name: Evaluate rules against the reviewed baseline
+        run: python tests/evaluate.py --chainsaw "$CHAINSAW" --mapping sigma-event-logs-all.yml --data samples --report results.md
+
+      - name: Publish results
+        if: always()
+        run: test -f results.md && cat results.md >> "$GITHUB_STEP_SUMMARY" || true

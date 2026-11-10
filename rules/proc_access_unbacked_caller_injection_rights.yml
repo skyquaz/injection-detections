@@ -1,0 +1,57 @@
+title: Process Opened With Injection Rights From Unbacked Code
+id: e0b03a90-9e6d-46d3-8a48-d14108f879dd
+related:
+    - id: f2466723-0063-4105-bc36-93f1bd4dfe3d
+      type: similar
+status: experimental
+description: |
+    Detects a process handle with injection-capable access rights (full access, or memory write plus operation and
+    thread creation) requested by code that does not belong to any loaded module. Sysmon marks such call-stack frames
+    as UNKNOWN(address). Shellcode and reflectively loaded payloads open their next target this way.
+    JIT-compiled .NET code (PowerShell, ASP.NET) produces UNKNOWN frames as well whenever it starts a child process.
+    Those events are excluded here, recognised either by the source image or by .NET runtime frames in the call stack
+    (the latter also works when Sysmon could not resolve the source image), and covered by a separate hunting rule.
+references:
+    - https://github.com/skyquaz/procsweep
+    - https://attack.mitre.org/techniques/T1055/
+author: skyquaz
+date: 2026-11-11
+tags:
+    - attack.stealth
+    - attack.privilege-escalation
+    - attack.t1055
+logsource:
+    product: windows
+    category: process_access
+detection:
+    selection_trace:
+        CallTrace|contains: 'UNKNOWN('
+    selection_rights:
+        GrantedAccess:
+            - '0x1fffff'  # PROCESS_ALL_ACCESS
+            - '0x1f0fff'  # PROCESS_ALL_ACCESS before Vista
+            - '0x1f1fff'
+            - '0x1f3fff'
+            - '0x1fff'
+            - '0x143a'    # query info, VM read/write/operation, create thread
+            - '0x147a'
+            - '0x1438'
+            - '0x43a'
+            - '0x47a'
+            - '0x438'
+    filter_main_codegen_hosts:
+        SourceImage|endswith:
+            - '\powershell.exe'
+            - '\powershell_ise.exe'
+            - '\pwsh.exe'
+            - '\w3wp.exe'
+    filter_main_clr_frames:
+        CallTrace|contains:
+            - '\mscorwks.dll+'  # .NET Framework 2.0 - 3.5
+            - '\clr.dll+'       # .NET Framework 4.x
+            - '\coreclr.dll+'   # .NET Core / .NET 5+
+    condition: all of selection_* and not 1 of filter_main_*
+falsepositives:
+    - Applications built on other JIT runtimes that open other processes with full access
+    - Security products
+level: high
